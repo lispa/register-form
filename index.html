@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <header class="card__header">
+        <h1 class="title">Create account</h1>
+        <p class="subtitle">Fill in the details below to register.</p>
+      </header>
+
+      <form id="regForm" class="form" novalidate>
+        <div class="grid">
+          <div class="field">
+            <label class="label" for="firstName">First name</label>
+            <input class="input" id="firstName" type="text" minlength="2" autocomplete="given-name" required />
+            <small class="hint">At least 2 characters.</small>
+          </div>
+
+          <div class="field">
+            <label class="label" for="lastName">Last name</label>
+            <input class="input" id="lastName" type="text" minlength="2" autocomplete="family-name" required />
+            <small class="hint">At least 2 characters.</small>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="email">Email</label>
+          <input class="input" id="email" type="email" autocomplete="email" required />
+          <small class="hint">We’ll never share your email.</small>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label class="label" for="password">Password</label>
+            <input class="input" id="password" type="password" autocomplete="new-password" required />
+          </div>
+
+          <div class="field">
+            <label class="label" for="password2">Confirm password</label>
+            <input class="input" id="password2" type="password" autocomplete="new-password" required />
+          </div>
+        </div>
+
+        <div class="rules">
+          <p class="rules__title">Password requirements</p>
+          <ul class="rules__list">
+            <li id="r-len" class="rule">At least 8 characters</li>
+            <li id="r-upper" class="rule">At least 1 uppercase letter</li>
+            <li id="r-lower" class="rule">At least 1 lowercase letter</li>
+            <li id="r-digit" class="rule">At least 1 digit</li>
+            <li id="r-match" class="rule">Passwords match</li>
+          </ul>
+        </div>
+
+        <button id="submitBtn" class="btn" type="submit" disabled>Create account</button>
+
+        <div id="out" class="output" aria-live="polite"></div>
+      </form>
+
+      <footer class="card__footer">
+        <p class="fineprint">By creating an account, you agree to our terms.</p>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("regForm");
+    const out = document.getElementById("out");
+
+    const firstNameEl = document.getElementById("firstName");
+    const lastNameEl = document.getElementById("lastName");
+    const emailEl = document.getElementById("email");
+
+    const pass1 = document.getElementById("password");
+    const pass2 = document.getElementById("password2");
+    const submitBtn = document.getElementById("submitBtn");
+
+    const rLen   = document.getElementById("r-len");
+    const rUpper = document.getElementById("r-upper");
+    const rLower = document.getElementById("r-lower");
+    const rDigit = document.getElementById("r-digit");
+    const rMatch = document.getElementById("r-match");
+
+    function setRule(el, ok) {
+      el.classList.toggle("rule--ok", ok);
+      el.classList.toggle("rule--bad", !ok);
+    }
+
+    function setFieldState(input, ok) {
+      input.classList.toggle("input--ok", ok);
+      input.classList.toggle("input--bad", !ok);
+    }
+
+    function showMessage(type, text) {
+      out.className = "output " + (type ? `output--${type}` : "");
+      out.textContent = text || "";
+    }
+
+    function validatePassword() {
+      const p1 = pass1.value;
+
+      const okLen   = p1.length >= 8;
+      const okUpper = /[A-Z]/.test(p1);
+      const okLower = /[a-z]/.test(p1);
+      const okDigit = /\d/.test(p1);
+      const okMatch = p1.length > 0 && p1 === pass2.value;
+
+      setRule(rLen, okLen);
+      setRule(rUpper, okUpper);
+      setRule(rLower, okLower);
+      setRule(rDigit, okDigit);
+      setRule(rMatch, okMatch);
+
+      // Field coloring
+      if (p1.length > 0) setFieldState(pass1, okLen && okUpper && okLower && okDigit);
+      if (pass2.value.length > 0) setFieldState(pass2, okMatch);
+
+      return okLen && okUpper && okLower && okDigit && okMatch;
+    }
+
+    function validateName(input) {
+      const ok = input.value.trim().length >= 2;
+      if (input.value.length > 0) setFieldState(input, ok);
+      return ok;
+    }
+
+    function validateEmail(input) {
+      const v = input.value.trim();
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      if (v.length > 0) setFieldState(input, ok);
+      return ok;
+    }
+
+    function validateAll() {
+      const okFirst = validateName(firstNameEl);
+      const okLast = validateName(lastNameEl);
+      const okEmail = validateEmail(emailEl);
+      const okPass = validatePassword();
+
+      const allOk = okFirst && okLast && okEmail && okPass;
+      submitBtn.disabled = !allOk;
+      return allOk;
+    }
+
+    // Live validation
+    [firstNameEl, lastNameEl].forEach(el => el.addEventListener("input", () => {
+      validateAll();
+      showMessage("", "");
+    }));
+    emailEl.addEventListener("input", () => {
+      validateAll();
+      showMessage("", "");
+    });
+    pass1.addEventListener("input", () => {
+      validateAll();
+      showMessage("", "");
+    });
+    pass2.addEventListener("input", () => {
+      validateAll();
+      showMessage("", "");
+    });
+
+    // Init rule colors
+    validateAll();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      showMessage("", "");
+
+      if (!validateAll()) {
+        showMessage("error", "Please fix the highlighted fields.");
+        return;
+      }
+
+      showMessage("info", "Submitting...");
+
+      const payload = {
+        first_name: firstNameEl.value.trim(),
+        last_name: lastNameEl.value.trim(),
+        email: emailEl.value.trim(),
+        password: pass1.value
+      };
+
+      try {
+        const res = await fetch("http://localhost:8080/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+          showMessage("success", "Account created successfully ✅");
+          form.reset();
+          // Clear styles and re-validate
+          document.querySelectorAll(".input").forEach(i => i.classList.remove("input--ok","input--bad"));
+          validateAll();
+        } else {
+          const msg = data && data.message ? data.message : "Registration failed.";
+          showMessage("error", `Error: ${msg}`);
+        }
+      } catch (err) {
+        showMessage("error", "Request error: " + err);
+      }
+    });
+  </script>
+</body>
+</html>
