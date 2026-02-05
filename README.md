@@ -174,4 +174,6 @@ No additional features are planned.
 
 ## Author
 
+Dmitrii Novikov
+
 Pet project created for learning purposes (Go backend + basic frontend).
